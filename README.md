@@ -1,87 +1,12 @@
-## Overcoming Catastrophic Forgetting in Incremental Object Detection via Elastic Response Distillation
+## 基于梯度正交投影与原型框合成回放的增量缺陷检测方法
 
-Official Pytorch implementation for "[Overcoming Catastrophic Forgetting in Incremental Object Detection via Elastic Response Distillation](https://arxiv.org/abs/2204.02136)", CVPR 2022.
+
 
 ###  Introduction
-Traditional object detectors are ill-equipped for incremental learning. However, fine-tuning directly on a well-trained detection model with only new data will lead to catastrophic forgetting. Knowledge distillation is a flexible way to mitigate catastrophic forgetting. In Incremental Object Detection (IOD), previous work mainly focuses on distilling for the combination of features and responses. However, they under-explore the information that contains in responses. In this paper, we propose a response-based incremental distillation method, dubbed Elastic Response Distillation (ERD), which focuses on elastically learning responses from the classification head and the regression head. Firstly, our method transfers category knowledge while equipping student detector with the ability to retain localization information during incremental learning. In addition, we further evaluate the quality of all locations and provide valuable responses by the Elastic Response Selection (ERS) strategy. Finally, we elucidate that the knowledge from different responses should be assigned with different importance during incremental distillation. Extensive experiments conducted on MS COCO demonstrate our method achieves state-of-the-art result, which substantially narrows the performance gap towards full training. 
+在工业表面缺陷检测场景中，缺陷类别随生产工艺持续演化，缺陷样本类型逐渐增加。现存的缺陷检测方法均为闭集检测或预测模式，模型训练完成后其卷积权重为静态值，若直接用新增样本对模型进行微调将发生灾难性遗忘。为此，本文提出一种基于梯度正交投影与原型框合成回放的增量缺陷检测方法（GOPSR）。在参数层面，提出基于主成分分析（PCA）的梯度正交投影策略，通过构建旧任务的关键特征子空间，并在增量训练过程中显式剔除梯度在旧任务关键特征子空间上的分量，从而保证模型参数更新不会破坏旧缺陷类别所依赖的判别特征，维持了模型对旧任务的稳定性；在数据层面，提出一种基于密集装箱合成的原型框回放策略，仅存储缺陷目标区域并动态合成高密度、多类别共存的回放样本，在显著降低存储与显存开销的同时，有效缓解了前景漂移问题，提升了模型对新任务的可塑性。在NEU-DET数据集上的实验结果表明，提出的GOPSR方法在增量学习过程中，有效地保留了旧任务中学习到的知识，其整体检测精度为65.3%，显著优于多种主流增量检测方法。
 
 <p align='left'>
   <img src='figs/framework.jpg' width='721'/>
 </p>
 
-### ====== 2023.07.04 Updated  ======
-### Migrate code to the following newer environment
-- Python 3.8
-- PyTorch 1.13.1
-- CUDA 11.6
-- [mmdetection](https://github.com/open-mmlab/mmdetection) 3.0.0
-- [mmcv](https://github.com/open-mmlab/mmcv) 2.0.0
 
-### Get Started
-
-This repo is based on [MMDetection 3.0](https://github.com/open-mmlab/mmdetection). Please refer to [GETTING_STARTED.md](https://mmdetection.readthedocs.io/en/v3.0.0/get_started.html) for the basic configuration and usage of MMDetection.
-Or follow the steps below to install
-
-```python
-conda create -n ERD python=3.8 -y
-
-source activate ERD
-
-conda install pytorch==1.13.1 torchvision==0.14.1 torchaudio==0.13.1 pytorch-cuda=11.6 -c pytorch -c nvidia
-
-pip install tqdm
-
-pip install -U openmim
-
-mim install mmengine==0.7.3
-
-mim install mmcv==2.0.0
-
-# cd erd 
-pip install -v -e .
-```
-
-You can run /script/select_categories.py to split the COCO dataset as you want,
-
-```python
-# to generate instances_train2017_sel_last_40_cats.json
-python ./script/select_categories.py
-
-```
-
-
-### Train
-```python
-# assume that you are under the root directory of this project,
-# and you have activated your virtual environment if needed.
-# and with COCO dataset in '/dataset/coco/'
-
-# train first 40 cats
-CUDA_VISIBLE_DEVICES=0,1 ./tools/dist_train.sh configs/gfl_increment/gfl_r50_fpn_1x_coco_first_40_cats.py 2 --work-dir=../ERD_results/gfl_increment/gfl_r50_fpn_1x_coco_first_40_cats
-#train last 40 cats incrementally
-CUDA_VISIBLE_DEVICES=0,1 ./tools/dist_train.sh configs/gfl_increment/gfl_r50_fpn_1x_coco_first_40_incre_last_40_cats.py 2 --work-dir=../ERD_results/gfl_increment/gfl_r50_fpn_1x_coco_first_40_incre_last_40_cats
-```
-
-### Test
-```python
-# test first 40 cats
-CUDA_VISIBLE_DEVICES=0,1 ./tools/dist_test.sh configs/gfl_increment/gfl_r50_fpn_1x_coco_first_40_cats.py ../ERD_results/gfl_increment/gfl_r50_fpn_1x_coco_first_40_cats/epoch_12.pth 2 --cfg-options test_evaluator.classwise=True
-#test all 80 cats on the incre model
-CUDA_VISIBLE_DEVICES=0,1 ./tools/dist_test.sh configs/gfl_increment/gfl_r50_fpn_1x_coco_first_40_incre_last_40_cats.py ../ERD_results/gfl_increment/gfl_r50_fpn_1x_coco_first_40_incre_last_40_cats/epoch_12.pth 2 --cfg-options test_evaluator.classwise=True
-
-```
-
-### Citation
-Please cite the following paper if this repo helps your research:
-```bibtex
-@InProceedings{ERD,
-    author    = {Tao Feng and Mang Wang and Hangjie Yuan},
-    title     = {Overcoming Catastrophic Forgetting in Incremental Object Detection via Elastic Response Distillation},
-    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition},
-    year      = {2022}
-}
-```
-# GOPSR
-# GOPSR
-# GOPSR
-# GOPSR
